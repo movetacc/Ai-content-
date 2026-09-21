@@ -1,0 +1,23 @@
+# Generated media and local pipeline output
+output/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+client_secret*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/

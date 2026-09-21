@@ -1,0 +1,64 @@
+name: Daily AI Content
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 14 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  create-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SCRIPT_MODEL: ${{ vars.SCRIPT_MODEL || 'meta-llama/llama-3.1-8b-instruct:free' }}
+      CONTENT_NICHE: ${{ vars.CONTENT_NICHE || 'AI side hustles and making money with AI' }}
+      TTS_VOICE: ${{ vars.TTS_VOICE || 'en-US-GuyNeural' }}
+      TTS_RATE: ${{ vars.TTS_RATE || '+8%' }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PUBLISH_YOUTUBE: ${{ vars.PUBLISH_YOUTUBE || 'false' }}
+      PUBLISH_INSTAGRAM: ${{ vars.PUBLISH_INSTAGRAM || 'false' }}
+      PUBLISH_TIKTOK: ${{ vars.PUBLISH_TIKTOK || 'false' }}
+      YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+      YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS || 'private' }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      PUBLIC_VIDEO_URL: ${{ secrets.PUBLIC_VIDEO_URL }}
+      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run content pipeline
+        run: python main.py
+
+      - name: Upload generated video artifact
+        if: always() && hashFiles('output/final.mp4') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-short
+          path: |
+            output/final.mp4
+            output/script.json
+            output/captions.srt
+          if-no-files-found: ignore
+          retention-days: 7
