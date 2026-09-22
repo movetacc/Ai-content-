@@ -17,10 +17,6 @@ never posts a broken video):
   PUBLISH_YOUTUBE=true
   PUBLISH_INSTAGRAM=true
   PUBLISH_TIKTOK=true
-
-CONTENT_STYLE controls the visuals:
-  footage  (default) - stock/AI-generated video clips via fetch_footage.py
-  stickman            - free code-drawn stickman animation via generate_stickman.py
 """
 import os
 import subprocess
@@ -39,16 +35,9 @@ def env_true(name: str) -> bool:
 
 
 if __name__ == "__main__":
-    content_style = os.environ.get("CONTENT_STYLE", "footage").strip().lower()
-
     run("generate_script.py")
     run("generate_voice.py")
-
-    if content_style == "stickman":
-        run("generate_stickman.py")
-    else:
-        run("fetch_footage.py")
-
+    run("fetch_footage.py")
     run("assemble_video.py")
 
     if env_true("PUBLISH_YOUTUBE"):

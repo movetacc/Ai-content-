@@ -16,7 +16,6 @@ jobs:
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       SCRIPT_MODEL: ${{ vars.SCRIPT_MODEL || 'anthropic/claude-3.5-haiku' }}
-      CONTENT_STYLE: ${{ vars.CONTENT_STYLE || 'footage' }}
       CONTENT_NICHE: ${{ vars.CONTENT_NICHE || 'AI side hustles and making money with AI' }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       FAL_API_KEY: ${{ secrets.FAL_API_KEY }}
