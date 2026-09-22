@@ -1,46 +1,53 @@
 """
-Turn output/script.json into an AI voiceover with edge-tts.
-Writes output/voice.mp3 and retries transient Edge TTS connection failures.
+Turn output/script.json into an MP3 voiceover with the ElevenLabs API.
+Writes output/voice.mp3.
 """
-import asyncio
 import json
 import os
 from pathlib import Path
 
-import edge_tts
+import requests
 
-VOICE = os.environ.get("TTS_VOICE", "en-US-AvaMultilingualNeural")
-RATE = os.environ.get("TTS_RATE", "+8%")
-MAX_ATTEMPTS = 3
+API_KEY = os.environ["ELEVENLABS_API_KEY"]
+VOICE_ID = os.environ["ELEVENLABS_VOICE_ID"]
+MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
+OUTPUT_FORMAT = "mp3_44100_128"
 
 
-async def synthesize(text: str, output_path: str) -> None:
-    last_error: Exception | None = None
+def synthesize(text: str, output_path: str) -> None:
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+    response = requests.post(
+        url,
+        headers={
+            "xi-api-key": API_KEY,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+        },
+        json={
+            "text": text,
+            "model_id": MODEL_ID,
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75,
+                "style": 0.2,
+                "use_speaker_boost": True,
+            },
+        },
+        params={"output_format": OUTPUT_FORMAT},
+        timeout=120,
+    )
+
+    if not response.ok:
+        detail = response.text[:500]
+        raise RuntimeError(
+            f"ElevenLabs TTS failed with HTTP {response.status_code}: {detail}"
+        )
+
     output = Path(output_path)
-
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            if output.exists():
-                output.unlink()
-            print(f"Generating voice with {VOICE} (attempt {attempt}/{MAX_ATTEMPTS})")
-            communicator = edge_tts.Communicate(text, VOICE, rate=RATE)
-            await communicator.save(output_path)
-            if not output.exists() or output.stat().st_size == 0:
-                raise RuntimeError("Edge TTS returned an empty audio file.")
-            return
-        except Exception as error:
-            last_error = error
-            if output.exists():
-                output.unlink()
-            print(f"Edge TTS attempt {attempt} failed: {type(error).__name__}: {error}")
-            if attempt < MAX_ATTEMPTS:
-                delay = 2 ** attempt
-                print(f"Retrying in {delay} seconds...")
-                await asyncio.sleep(delay)
-
-    raise RuntimeError(
-        f"Edge TTS failed after {MAX_ATTEMPTS} attempts using voice {VOICE}."
-    ) from last_error
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(response.content)
+    if output.stat().st_size == 0:
+        raise RuntimeError("ElevenLabs returned an empty audio response.")
 
 
 if __name__ == "__main__":
@@ -48,6 +55,6 @@ if __name__ == "__main__":
         data = json.load(file)
 
     full_text = f"{data['hook']} {data['script']}"
-    os.makedirs("output", exist_ok=True)
-    asyncio.run(synthesize(full_text, "output/voice.mp3"))
+    print(f"Generating ElevenLabs voice with voice ID {VOICE_ID[:6]}...")
+    synthesize(full_text, "output/voice.mp3")
     print("Voice saved to output/voice.mp3")

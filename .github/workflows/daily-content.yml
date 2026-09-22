@@ -17,9 +17,10 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       SCRIPT_MODEL: ${{ vars.SCRIPT_MODEL || 'meta-llama/llama-3.1-8b-instruct:free' }}
       CONTENT_NICHE: ${{ vars.CONTENT_NICHE || 'AI side hustles and making money with AI' }}
-      TTS_VOICE: ${{ vars.TTS_VOICE || 'en-US-GuyNeural' }}
-      TTS_RATE: ${{ vars.TTS_RATE || '+8%' }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_MODEL_ID: ${{ vars.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2' }}
       PUBLISH_YOUTUBE: ${{ vars.PUBLISH_YOUTUBE || 'false' }}
       PUBLISH_INSTAGRAM: ${{ vars.PUBLISH_INSTAGRAM || 'false' }}
       PUBLISH_TIKTOK: ${{ vars.PUBLISH_TIKTOK || 'false' }}
@@ -77,6 +78,21 @@ jobs:
               sys.exit(1)
 
           print("OpenRouter API key validation passed.")
+          PY
+
+      - name: Validate ElevenLabs configuration
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+          voice_id = os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
+          print(f"ELEVENLABS_API_KEY present: {bool(api_key)}")
+          print(f"ELEVENLABS_VOICE_ID present: {bool(voice_id)}")
+          if not api_key or not voice_id:
+              print("ERROR: Add ELEVENLABS_API_KEY as an Actions Secret and ELEVENLABS_VOICE_ID as an Actions Variable.")
+              sys.exit(1)
           PY
 
       - name: Run content pipeline
