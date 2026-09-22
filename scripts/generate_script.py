@@ -13,17 +13,18 @@ import requests
 OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
 NICHE = os.environ.get("CONTENT_NICHE", "AI side hustles and making money with AI")
 
-# The :free models share a global rate limit across every OpenRouter user, so a 429
-# is expected under load, not a sign anything is broken. Try the requested model
-# first, then fall back through a few other free models before giving up.
-PRIMARY_MODEL = os.environ.get("SCRIPT_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
+# Claude 3.5 Haiku is cheap (a script here runs well under a cent) and writes far more
+# naturally than the free 8B models. If it fails (bad key, no credits, outage) or you'd
+# rather not spend anything, fall back to free models so the pipeline never just dies.
+PRIMARY_MODEL = os.environ.get("SCRIPT_MODEL", "anthropic/claude-3.5-haiku")
 FALLBACK_MODELS = [
     model
     for model in [
         PRIMARY_MODEL,
+        "openai/gpt-4o-mini",
+        "meta-llama/llama-3.1-8b-instruct:free",
         "google/gemma-2-9b-it:free",
         "mistralai/mistral-7b-instruct:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
     ]
     if model
 ]
