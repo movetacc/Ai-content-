@@ -13,6 +13,8 @@ import requests
 OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
 NICHE = os.environ.get("CONTENT_NICHE", "AI side hustles and making money with AI")
 
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "").strip()
+
 # Claude 3.5 Haiku is cheap (a script here runs well under a cent) and writes far more
 # naturally than the free 8B models. If it fails (bad key, no credits, outage) or you'd
 # rather not spend anything, fall back to free models so the pipeline never just dies.
@@ -33,9 +35,61 @@ FALLBACK_MODELS = list(dict.fromkeys(FALLBACK_MODELS))
 
 MAX_RETRIES_PER_MODEL = 3
 
-PROMPT = f"""You write scripts for short-form faceless videos (TikTok, YouTube Shorts, and Reels)
-about {NICHE}.
 
+def fetch_trending_context(niche: str) -> str:
+    """Web search for current stories in the niche via Tavily. Returns "" (never
+    raises) if TAVILY_API_KEY isn't set or the search fails — the script still
+    generates fine without it, just without real-time grounding.
+    """
+    if not TAVILY_API_KEY:
+        return ""
+
+    try:
+        response = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": TAVILY_API_KEY,
+                "query": f"latest trending news and stories about {niche}",
+                "topic": "news",
+                "search_depth": "basic",
+                "max_results": 5,
+                "days": 3,
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        results = response.json().get("results", [])
+        if not results:
+            return ""
+
+        lines = []
+        for item in results[:5]:
+            title = (item.get("title") or "").strip()
+            snippet = (item.get("content") or "")[:200].strip()
+            if title:
+                lines.append(f"- {title}: {snippet}")
+        return "\n".join(lines)
+    except Exception as exc:  # noqa: BLE001 — never let a search hiccup break the pipeline
+        print(f"Trend search failed, continuing without it: {exc}", file=sys.stderr)
+        return ""
+
+
+def build_prompt(trending_context: str) -> str:
+    trending_block = ""
+    if trending_context:
+        trending_block = f"""
+Here are real, current stories related to this niche from the last few days:
+{trending_context}
+
+Where it fits naturally, ground the script in one of these specific current stories or
+numbers instead of a generic timeless tip — that's what makes it feel current, not recycled.
+Don't force it or fabricate details beyond what's given above; if none of these fit, write
+a strong evergreen script instead.
+"""
+
+    return f"""You write scripts for short-form faceless videos (TikTok, YouTube Shorts, and Reels)
+about {NICHE}.
+{trending_block}
 Write like a real person telling a friend something useful they just learned — specific,
 opinionated, a little blunt. NOT like an AI-generated listicle.
 
@@ -69,7 +123,7 @@ never abstract concepts like "success" or "growth" that have no literal visual.
 """
 
 
-def call_model(model: str) -> requests.Response:
+def call_model(model: str, prompt: str) -> requests.Response:
     return requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={
@@ -78,7 +132,7 @@ def call_model(model: str) -> requests.Response:
         },
         json={
             "model": model,
-            "messages": [{"role": "user", "content": PROMPT}],
+            "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.9,
         },
         timeout=60,
@@ -106,10 +160,14 @@ def parse_response(response: requests.Response) -> dict:
 
 def generate() -> dict:
     last_error: Exception | None = None
+    trending_context = fetch_trending_context(NICHE)
+    if trending_context:
+        print("Found current trending context, grounding script in it.")
+    prompt = build_prompt(trending_context)
 
     for model in FALLBACK_MODELS:
         for attempt in range(1, MAX_RETRIES_PER_MODEL + 1):
-            response = call_model(model)
+            response = call_model(model, prompt)
 
             if response.status_code == 429:
                 retry_after = response.headers.get("Retry-After")
