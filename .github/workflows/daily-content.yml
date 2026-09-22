@@ -18,8 +18,11 @@ jobs:
       SCRIPT_MODEL: ${{ vars.SCRIPT_MODEL || 'anthropic/claude-3.5-haiku' }}
       CONTENT_NICHE: ${{ vars.CONTENT_NICHE || 'AI side hustles and making money with AI' }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-      EDGE_TTS_VOICE: ${{ vars.EDGE_TTS_VOICE || 'en-US-GuyNeural' }}
-      EDGE_TTS_RATE: ${{ vars.EDGE_TTS_RATE || '+0%' }}
+      FAL_API_KEY: ${{ secrets.FAL_API_KEY }}
+      FAL_VIDEO_MODEL: ${{ vars.FAL_VIDEO_MODEL || 'fal-ai/ltx-video' }}
+      AI_CLIP_COUNT: ${{ vars.AI_CLIP_COUNT || '4' }}
+      EDGE_TTS_VOICE: ${{ vars.EDGE_TTS_VOICE || 'en-US-AndrewMultilingualNeural' }}
+      EDGE_TTS_RATE: ${{ vars.EDGE_TTS_RATE || '+8%' }}
       PUBLISH_YOUTUBE: ${{ vars.PUBLISH_YOUTUBE || 'false' }}
       PUBLISH_INSTAGRAM: ${{ vars.PUBLISH_INSTAGRAM || 'false' }}
       PUBLISH_TIKTOK: ${{ vars.PUBLISH_TIKTOK || 'false' }}
