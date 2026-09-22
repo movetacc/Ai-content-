@@ -156,15 +156,20 @@ if __name__ == "__main__":
         data = json.load(file)
 
     audio_duration = probe_duration("output/voice.mp3")
-    clips = sorted(glob.glob("output/clips/clip_*.mp4"))
-    if not clips:
-        raise SystemExit("No stock clips found. Run fetch_footage.py first.")
+    background_path = "output/clips/background.mp4"
 
-    build_background(clips, audio_duration, "output/clips/background.mp4")
+    if os.path.exists(background_path):
+        print(f"Using pre-built background at {background_path} (e.g. stickman animation)")
+    else:
+        clips = sorted(glob.glob("output/clips/clip_*.mp4"))
+        if not clips:
+            raise SystemExit("No stock clips found. Run fetch_footage.py first.")
+        build_background(clips, audio_duration, background_path)
+
     full_script = f"{data['hook']} {data['script']}"
     build_srt(full_script, audio_duration, "output/captions.srt")
     burn_captions_and_audio(
-        "output/clips/background.mp4",
+        background_path,
         "output/voice.mp3",
         "output/captions.srt",
         "output/final.mp4",
