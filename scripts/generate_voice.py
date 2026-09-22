@@ -11,15 +11,16 @@ from pathlib import Path
 
 import edge_tts
 
-VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-GuyNeural")
-RATE = os.environ.get("EDGE_TTS_RATE", "+0%")
+VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-AndrewMultilingualNeural")
+RATE = os.environ.get("EDGE_TTS_RATE", "+8%")
+PITCH = os.environ.get("EDGE_TTS_PITCH", "+0Hz")
 MAX_ATTEMPTS = 4
 
 
 async def synthesize_once(text: str, output_path: str) -> None:
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    communicate = edge_tts.Communicate(text, voice=VOICE, rate=RATE)
+    communicate = edge_tts.Communicate(text, voice=VOICE, rate=RATE, pitch=PITCH)
     await communicate.save(str(output))
 
     if not output.exists() or output.stat().st_size == 0:

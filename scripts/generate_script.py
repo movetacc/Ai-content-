@@ -35,16 +35,36 @@ MAX_RETRIES_PER_MODEL = 3
 PROMPT = f"""You write scripts for short-form faceless videos (TikTok, YouTube Shorts, and Reels)
 about {NICHE}.
 
+Write like a real person telling a friend something useful they just learned — specific,
+opinionated, a little blunt. NOT like an AI-generated listicle.
+
+Never use these overused AI-script patterns:
+- "Are you tired of..." / "Are you struggling with..." / "Ever wonder why..."
+- "In today's video, we're going to..." / "Let's dive in" / "Without further ado"
+- "In this fast-paced world" / "In today's digital age" / hollow "picture this" openers
+- Vague hype with no content: "game-changer," "unlock your potential," "level up your life,"
+  "this one trick," "secret nobody tells you"
+- Generic CTAs like "smash that follow button" or "let me know in the comments"
+
+Instead:
+- Hook with a specific, concrete claim, number, or contradiction in the first sentence —
+  something a viewer could fact-check or picture, not a vague tease.
+- Give one real, specific piece of information (a tool name, a number, a step, a mistake) —
+  not generic motivational filler.
+- End with a soft, specific CTA tied to what you just said, not a generic "follow for more."
+
 Return only valid JSON, with no markdown fences, in exactly this shape:
 {{
   "topic": "short catchy title",
-  "hook": "first line that grabs attention in under three seconds",
-  "script": "100-130 spoken words, conversational, one clear payoff, soft follow CTA",
+  "hook": "first line: a specific, concrete claim or number, not a vague tease, under 3 seconds spoken",
+  "script": "100-130 spoken words, conversational, one real specific payoff, soft specific CTA",
   "caption": "short social caption with 3-5 relevant hashtags",
   "broll_keywords": ["keyword one", "keyword two", "keyword three", "keyword four"]
 }}
 
-Use simple, visual, stock-footage-searchable terms for broll_keywords.
+For broll_keywords: use concrete, literal, physically filmable nouns that appear or are directly
+implied in the script (e.g. "person typing laptop", "stack of cash close up", "phone screen scrolling") —
+never abstract concepts like "success" or "growth" that have no literal visual.
 """
 
 

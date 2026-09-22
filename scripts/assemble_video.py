@@ -96,7 +96,7 @@ def seconds_to_srt_timestamp(value: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
 
 
-def build_srt(script: str, duration: float, output_path: str, words_per_chunk: int = 6) -> None:
+def build_srt(script: str, duration: float, output_path: str, words_per_chunk: int = 3) -> None:
     words = script.split()
     chunks = [
         " ".join(words[index : index + words_per_chunk])
@@ -112,14 +112,17 @@ def build_srt(script: str, duration: float, output_path: str, words_per_chunk: i
             file.write(
                 f"{seconds_to_srt_timestamp(start)} --> {seconds_to_srt_timestamp(end)}\n"
             )
-            file.write(f"{chunk}\n\n")
+            file.write(f"{chunk.upper()}\n\n")
 
 
 def burn_captions_and_audio(background: str, audio: str, srt: str, output_path: str) -> None:
     subtitle_path = os.path.abspath(srt).replace("\\", "/").replace(":", "\\:")
+    # PlayResY pins the coordinate system libass uses to the actual 1080x1920 frame, so
+    # FontSize is a real fraction of the frame instead of shrinking on a tall vertical video.
     style = (
-        "FontName=Arial,FontSize=14,Bold=1,PrimaryColour=&H00FFFFFF,"
-        "OutlineColour=&H00000000,BorderStyle=3,Outline=2,Alignment=2,MarginV=120"
+        "FontName=Arial Black,FontSize=88,Bold=1,PrimaryColour=&H00FFFFFF,"
+        "OutlineColour=&H00000000,BorderStyle=1,Outline=6,Shadow=0,"
+        "Alignment=2,MarginV=160,PlayResX=1080,PlayResY=1920"
     )
     subprocess.run(
         [
