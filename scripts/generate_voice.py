@@ -1,53 +1,26 @@
 """
-Turn output/script.json into an MP3 voiceover with the ElevenLabs API.
+Turn output/script.json into an MP3 voiceover with edge-tts (free, no API key).
 Writes output/voice.mp3.
 """
+import asyncio
 import json
 import os
 from pathlib import Path
 
-import requests
+import edge_tts
 
-API_KEY = os.environ["ELEVENLABS_API_KEY"]
-VOICE_ID = os.environ["ELEVENLABS_VOICE_ID"]
-MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
-OUTPUT_FORMAT = "mp3_44100_128"
+VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-GuyNeural")
+RATE = os.environ.get("EDGE_TTS_RATE", "+0%")
 
 
-def synthesize(text: str, output_path: str) -> None:
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
-    response = requests.post(
-        url,
-        headers={
-            "xi-api-key": API_KEY,
-            "Content-Type": "application/json",
-            "Accept": "audio/mpeg",
-        },
-        json={
-            "text": text,
-            "model_id": MODEL_ID,
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75,
-                "style": 0.2,
-                "use_speaker_boost": True,
-            },
-        },
-        params={"output_format": OUTPUT_FORMAT},
-        timeout=120,
-    )
-
-    if not response.ok:
-        detail = response.text[:500]
-        raise RuntimeError(
-            f"ElevenLabs TTS failed with HTTP {response.status_code}: {detail}"
-        )
-
+async def synthesize(text: str, output_path: str) -> None:
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(response.content)
-    if output.stat().st_size == 0:
-        raise RuntimeError("ElevenLabs returned an empty audio response.")
+    communicate = edge_tts.Communicate(text, voice=VOICE, rate=RATE)
+    await communicate.save(str(output))
+
+    if not output.exists() or output.stat().st_size == 0:
+        raise RuntimeError("edge-tts produced an empty audio file.")
 
 
 if __name__ == "__main__":
@@ -55,6 +28,6 @@ if __name__ == "__main__":
         data = json.load(file)
 
     full_text = f"{data['hook']} {data['script']}"
-    print(f"Generating ElevenLabs voice with voice ID {VOICE_ID[:6]}...")
-    synthesize(full_text, "output/voice.mp3")
+    print(f"Generating edge-tts voice with voice {VOICE}...")
+    asyncio.run(synthesize(full_text, "output/voice.mp3"))
     print("Voice saved to output/voice.mp3")
